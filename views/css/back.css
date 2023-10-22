@@ -1,0 +1,94 @@
+/**
+* 2007-2023 PrestaShop
+*
+* NOTICE OF LICENSE
+*
+* This source file is subject to the Academic Free License (AFL 3.0)
+* that is bundled with this package in the file LICENSE.txt.
+* It is also available through the world-wide-web at this URL:
+* http://opensource.org/licenses/afl-3.0.php
+* If you did not receive a copy of the license and are unable to
+* obtain it through the world-wide-web, please send an email
+* to license@prestashop.com so we can send you a copy immediately.
+*
+* DISCLAIMER
+*
+* Do not edit or add to this file if you wish to upgrade PrestaShop to newer
+* versions in the future. If you wish to customize PrestaShop for your
+* needs please refer to http://www.prestashop.com for more information.
+*
+*  @author    PrestaShop SA <contact@prestashop.com>
+*  @copyright 2007-2023 PrestaShop SA
+*  @license   http://opensource.org/licenses/afl-3.0.php  Academic Free License (AFL 3.0)
+*  International Registered Trademark & Property of PrestaShop SA
+*/
+
+/**
+ * Don't forget to prefix your containers with your own identifier
+ * to avoid any conflicts with others containers.
+ */
+
+#content .tab-pane:first-child .panel {
+	border-top-left-radius: 0;
+}
+
+.woovi-header .text-branded,
+.woovi-content .text-branded {
+	color: #00aff0;
+}
+
+.woovi-header h4,
+.woovi-content h4,
+.woovi-content h5 {
+	margin: 2px 0;
+	color: #00aff0;
+	font-size: 1.8em;
+}
+
+.woovi-header h4 {
+	margin-top: 5px;
+}
+
+.woovi-header .col-md-6 {
+	margin-top: 18px;
+}
+
+.woovi-content h4 {
+	margin-bottom: 10px;
+}
+
+.woovi-content h5 {
+	font-size: 1.4em;
+	margin-bottom: 10px;
+}
+
+.woovi-content h6 {
+	font-size: 1.3em;
+	margin: 1px 0 4px 0;
+}
+
+.woovi-header > .col-md-4 {
+	height: 65px;
+	vertical-align: middle;
+	border-left: 1px solid #ddd;
+}
+
+.woovi-header > .col-md-4:first-child {
+	border-left: none;
+}
+
+.woovi-header #create-account-btn {
+	margin-top: 14px;
+}
+
+.woovi-content dd + dt {
+	margin-top: 5px;
+}
+
+.woovi-content ul {
+	padding-left: 15px;
+}
+
+.woovi-content .ul-spaced li {
+	margin-bottom: 5px;
+}
