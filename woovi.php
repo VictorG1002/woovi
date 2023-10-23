@@ -52,7 +52,7 @@ class Woovi extends PaymentModule
 
         $this->confirmUninstall = $this->l('Tem certeza que deseja desinstalar esse modulo?');
 
-        $this->limited_countries = array('FR');
+        $this->limited_countries = array('BR');
 
         $this->limited_currencies = array('EUR');
 
