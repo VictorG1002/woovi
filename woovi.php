@@ -54,7 +54,7 @@ class Woovi extends PaymentModule
 
         $this->limited_countries = array('BR');
 
-        $this->limited_currencies = array('EUR');
+        $this->limited_currencies = array('BRL');
 
         $this->ps_versions_compliancy = array('min' => '1.7', 'max' => _PS_VERSION_);
     }
