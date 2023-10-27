@@ -42,9 +42,11 @@ This document details steps necessary to connect your e-Commerce platform, based
 # Clone this repository
 $ git clone https://github.com/VictorG1002/woovi.git
 ```
-After placing the Woovi module, go to the modules tab in the prestashop admin area
+After cloning the woovi module, go to the modules tab in the prestashop admin area and click on send module, then send the module compressed in zip format
+
+ <img  alt="woovi-logo" src="./step1.png">
 
 
-
+##
 
 Made with ♥ by Victor Oliveira ➡️ [Get in touch!](https://www.linkedin.com/in/victoroliveira-/)
