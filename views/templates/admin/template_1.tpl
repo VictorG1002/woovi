@@ -24,14 +24,11 @@
 *}
 
 <div class="panel">
-	<div class="row woovi-header">
-		<img src="{$module_dir|escape:'html':'UTF-8'}views/img/template_1_logo.png" class="col-xs-6 col-md-4 text-center" id="payment-logo" />
-		<div class="col-xs-6 col-md-4 text-center">
-			<h4>{l s='Online payment processing' mod='woovi'}</h4>
-			<h4>{l s='Fast - Secure - Reliable' mod='woovi'}</h4>
-		</div>
-		<div class="col-xs-12 col-md-4 text-center">
-			<a href="#" onclick="javascript:return false;" class="btn btn-primary" id="create-account-btn">{l s='Create an account now!' mod='woovi'}</a><br />
+	<div id="woovi-header">
+		<img src="{$module_dir|escape:'html':'UTF-8'}views/img/template_1_logo.png"  id="payment-logo" />
+
+		<div id="">
+			<a href="https://app.woovi.com/register/?src=join" target="_blank"  id="create-account-btn">{l s='Create an account now!' mod='woovi'}</a><br />
 			{l s='Already have an account?' mod='woovi'}<a href="#" onclick="javascript:return false;"> {l s='Log in' mod='woovi'}</a>
 		</div>
 	</div>
@@ -82,7 +79,7 @@
 				<h4>{l s='Accept payments in the United States using all major credit cards' mod='woovi'}</h4>
 				
 				<div class="row">
-					<img src="{$module_dir|escape:'html':'UTF-8'}views/img/template_1_cards.png" class="col-md-6" id="payment-logo" />
+					<img src="{$module_dir|escape:'html':'UTF-8'}views/img/template_1_cards.png" class="col-md-4" id="payment-logo" />
 					<div class="col-md-6">
 						<h6 class="text-branded">{l s='For transactions in US Dollars (USD) only' mod='woovi'}</h6>
 						<p class="text-branded">{l s='Call 888-888-1234 if you have any questions or need more information!' mod='woovi'}</p>
