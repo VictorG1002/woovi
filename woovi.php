@@ -147,54 +147,90 @@ class Woovi extends PaymentModule
     /**
      * Create the structure of your form.
      */
-    protected function getConfigForm()
+
+     
+   protected function getConfigForm()
     {
-        return array(
-            'form' => array(
-                'legend' => array(
-                'title' => $this->l('Settings'),
-                'icon' => 'icon-cogs',
-                ),
-                'input' => array(
-                    array(
-                        'type' => 'switch',
-                        'label' => $this->l('Live mode'),
-                        'name' => 'WOOVI_LIVE_MODE',
-                        'is_bool' => true,
-                        'desc' => $this->l('Use this module in live mode'),
-                        'values' => array(
-                            array(
-                                'id' => 'active_on',
-                                'value' => true,
-                                'label' => $this->l('Enabled')
-                            ),
-                            array(
-                                'id' => 'active_off',
-                                'value' => false,
-                                'label' => $this->l('Disabled')
-                            )
-                        ),
-                    ),
-                    array(
-                        'col' => 3,
-                        'type' => 'text',
-                        'prefix' => '<i class="icon icon-envelope"></i>',
-                        'desc' => $this->l('Enter a valid email address'),
-                        'name' => 'WOOVI_ACCOUNT_EMAIL',
-                        'label' => $this->l('Email'),
-                    ),
-                    array(
-                        'type' => 'password',
-                        'name' => 'WOOVI_ACCOUNT_PASSWORD',
-                        'label' => $this->l('Password'),
-                    ),
-                ),
-                'submit' => array(
-                    'title' => $this->l('Save'),
-                ),
-            ),
-        );
+		$config = array(
+			'form' => array(
+				'legend' => array(
+				'title' => $this->l('Configurações'),
+				'icon' => 'icon-cogs',
+				),
+				'input' => array(
+					array(
+						'col' => 6,
+						'type' => 'text',
+						'desc' => $this->l('Nome do método de pagamento a exibir ao cliente no checkout (Ex: Pague com Pix).'),
+						'name' => 'WOOVI_TITULO',
+						'label' => $this->l('Titulo a Exibir'),
+					),
+					array(
+						'col' => 6,
+						'type' => 'text',
+						'desc' => $this->l('Chave de acesso a API da Woovi.'),
+						'name' => 'WOOVI_KEY',
+						'label' => $this->l('AppID'),
+					),
+					array(
+						'type' => 'select',
+						'name' => 'WOOVI_INICIADA',
+						'desc' => $this->l('Status customizado ou já existente!'),
+						'label' => $this->l('Status Aguardando Pagamento'),
+						'options' => array(
+							'query' => $this->nomes_status_pagamentos(),
+							'id' => 'id_order_state',
+							'name' => 'name'
+						)
+					),
+					array(
+						'type' => 'select',
+						'name' => 'WOOVI_PAGO',
+						'desc' => $this->l('Status customizado ou já existente!'),
+						'label' => $this->l('Status Pago'),
+						'options' => array(
+							'query' => $this->nomes_status_pagamentos(),
+							'id' => 'id_order_state',
+							'name' => 'name'
+						)
+					),
+					array(
+						'type' => 'select',
+						'name' => 'WOOVI_DEVOLVIDO',
+						'desc' => $this->l('Status customizado ou já existente!'),
+						'label' => $this->l('Status Devolvido'),
+						'options' => array(
+							'query' => $this->nomes_status_pagamentos(),
+							'id' => 'id_order_state',
+							'name' => 'name'
+						)
+					),
+					array(
+						'type' => 'select',
+						'name' => 'WOOVI_CANCELADO',
+						'desc' => $this->l('Status customizado ou já existente!'),
+						'label' => $this->l('Status Cancelado'),
+						'options' => array(
+							'query' => $this->nomes_status_pagamentos(),
+							'id' => 'id_order_state',
+							'name' => 'name'
+						)
+					),
+				),
+				'submit' => array(
+					'title' => $this->l('Salvar'),
+				),
+			),
+		);
+		return $config;
     }
+
+
+    public function nomes_status_pagamentos() 
+    {
+		global $cookie;
+		return Db::getInstance()->ExecuteS('SELECT * FROM `'._DB_PREFIX_.'order_state` AS a,`'._DB_PREFIX_.'order_state_lang` AS b WHERE b.id_lang = "'.$cookie->id_lang.'" AND a.deleted = "0" AND a.id_order_state=b.id_order_state');
+	}
 
     /**
      * Set values for the inputs.
