@@ -81,11 +81,18 @@ class Woovi extends PaymentModule
 
         Configuration::updateValue('WOOVI_LIVE_MODE', false);
 
+        include(dirname(__FILE__).'/sql/install.php');
         return parent::install() &&
             $this->registerHook('header') &&
-            $this->registerHook('displayBackOfficeHeader') &&
-            $this->registerHook('paymentOptions') &&
+			$this->registerHook('backOfficeHeader') &&
+            $this->registerHook('displayOrderDetail') &&
+            $this->registerHook('payment') &&
+			$this->registerHook('paymentOptions') &&
+            $this->registerHook('paymentReturn') &&
             $this->registerHook('actionPaymentConfirmation') &&
+            $this->registerHook('displayAdminOrder') &&
+            $this->registerHook('displayFooter') &&
+            $this->registerHook('displayHeader') &&
             $this->registerHook('displayPayment') &&
             $this->registerHook('displayPaymentReturn');
     }
@@ -225,12 +232,195 @@ class Woovi extends PaymentModule
 		return $config;
     }
 
+      protected function getConfigFormValues()
+    {
+        $inputs = array();
+        $form   = $this->getConfigForm();
+        foreach ($form['form']['input'] as $v) {
+            $chave          = $v['name'];
+            $inputs[$chave] = Configuration::get($chave, '');
+        }
+        return $inputs;
+    }
 
+      protected function postProcess()
+    {
+        $form_values = $this->getConfigFormValues();
+
+        foreach (array_keys($form_values) as $key) {
+            Configuration::updateValue($key, Tools::getValue($key));
+        }
+    }
+
+   public function hookPaymentOptions($params) {
+	
+		
+		//verifica se e uma moeda aceita
+        $currency_id = $params['cart']->id_currency;
+        $currency = new Currency((int)$currency_id);
+        if (in_array($currency->iso_code, $this->limited_currencies) == false){
+            return false;
+        }
+		
+        //dados do pedido
+        $carrinho = $params['cart'];
+		$cliente = Context::getContext()->customer;
+		$endereco_id = $carrinho->id_address_invoice;
+        $endereco = new Address((int)($endereco_id));
+        $link = Context::getContext()->link;
+        $total = $carrinho->getOrderTotal(true, 3);
+        $frete = $carrinho->getOrderTotal(true, 5);
+        
+        //tira o frete
+        $total_pix_sem = ($total-$frete);
+        
+
+		//captura o cpf ou cnpj
+		$numero_fiscal = preg_replace('/\D/', '', $this->cpf_cnpj());
+		$array_cobranca = array_merge((array)$cliente,(array)$endereco);
+        $campo_fiscal1 = explode('.',Configuration::get("PAGHIPERPIX_FISCAL1"));
+		$fiscal1 = isset($campo_fiscal1[1])?$campo_fiscal1[1]:'cpf';
+		$campo_fiscal2 = explode('.',Configuration::get("PAGHIPERPIX_FISCAL2"));
+		$fiscal2 = isset($campo_fiscal2[1])?$campo_fiscal2[1]:'cnpj';
+		$array_cobranca = array_merge((array)$cliente,(array)$endereco);
+		if(isset($array_cobranca[$fiscal1]) && !empty($this->so_numeros($array_cobranca[$fiscal1]))){
+			$numero_fiscal = $this->so_numeros($array_cobranca[$fiscal1]);
+		}elseif(isset($array_cobranca[$fiscal2]) && !empty($this->so_numeros(($array_cobranca[$fiscal2])))){
+			$numero_fiscal = $this->so_numeros($array_cobranca[$fiscal2]);
+		}
+		
+		//meio pix
+		$opcoes = array();
+		$pix = new PaymentOption();
+		if($desconto > 0){
+			$pix->setCallToActionText($this->trans(Configuration::get('PAGHIPERPIX_TITULO'), array(), 'Modules.PagHiperPix.Pix').' ('.$desconto.'% de desconto)');
+		}else{
+			$pix->setCallToActionText($this->trans(Configuration::get('PAGHIPERPIX_TITULO'), array(), 'Modules.PagHiperPix.Pix').' (a vista)');
+		}
+		$pix->setLogo(Media::getMediaPath(_PS_MODULE_DIR_.$this->name.'/views/img/icon.png'));
+		$pix->setForm($this->generateForm($params,$numero_fiscal,$cliente,($total_pix_sem+$frete),$desconto));
+		$opcoes[] = $pix;
+
+        return $opcoes;	
+	}
+	
+	protected function generateForm($params,$numero_fiscal,$cliente,$total_real,$desconto)
+	{
+        //aplica no template
+        $this->context->smarty->assign('module_dir', $this->dirModule());
+		$this->context->smarty->assign('pagador', $cliente->firstname.' '.$cliente->lastname);
+		$this->context->smarty->assign('desconto', $desconto);
+		$this->context->smarty->assign('fiscal', $numero_fiscal);
+		$this->context->smarty->assign('fiscal_size', strlen($numero_fiscal));
+		$this->context->smarty->assign('total', $total_real);
+		$this->context->smarty->assign('total_formatado', Tools::displayPrice($total_real));
+		$this->context->smarty->assign('url_modulo', Tools::getShopDomainSsl(true, true).__PS_BASE_URI__.'modules/'.$this->name.'/');
+		$this->context->smarty->assign('url_loja', Tools::getShopDomainSsl(true, true).__PS_BASE_URI__);
+
+		//layout
+		return $this->context->smarty->fetch('module:paghiperpix/views/templates/hook/form.tpl');
+    }
+	
+	public function dirModule()
+	{
+		return $this->_path;
+	}
+
+	public function removerVoucherErro($cart)
+	{
+		$cart_rules = $cart->getCartRules();
+        $rule_cod = 'V0C'.(int)($cart->id_customer).'O'.(int)($cart->id);
+		foreach($cart_rules as $rule){
+			if($rule['name']==$rule_cod && $cart->id_customer==$rule['id_customer']){
+				$cart->removeCartRule($rule['id_cart_rule']);
+				$sql = array();
+				$sql[] = "DELETE FROM `"._DB_PREFIX_."cart_rule` WHERE id_cart_rule = '".(int)$rule['id_cart_rule']."'";
+				$sql[] = "DELETE FROM `"._DB_PREFIX_."cart_rule_lang` WHERE id_cart_rule = '".(int)$rule['id_cart_rule']."'";
+				foreach ($sql as $query) {
+					Db::getInstance()->execute($query);
+				}
+			}
+		}
+	}
+	
+	public function aplicarDesconto($cart)
+	{
+		if(CartRule::cartRuleExists('DESCONTOPIXPH'.$cart->id)){
+            return false;
+        }
+        $rule = 'V0C'.(int)($cart->id_customer).'O'.(int)($cart->id);
+        if(CartRule::cartRuleExists($rule)){
+            return false;
+        }
+		$total = (float)Configuration::get("PAGHIPERPIX_DESCONTO");
+		$name='DESCONTOPIXPH'.$cart->id;
+		$tipoDesconto = 1;
+		$languages=Language::getLanguages();
+		foreach ($languages as $key => $language) {
+			$arrayName[$language['id_lang']]= 'V0C'.(int)($cart->id_customer).'O'.(int)($cart->id);
+		}
+		$voucher=new CartRule();
+		$voucher->description=(string)($name);
+		$voucher->reduction_amount = ($tipoDesconto == 2 ? $total : '');
+		$voucher->reduction_percent = ($tipoDesconto == 1 ? $total : '');
+		$voucher->name=$arrayName;
+		$voucher->id_customer=(int)($cart->id_customer);
+		$voucher->id_currency=(int)($cart->id_currency);
+		$voucher->quantity=1;
+		$voucher->quantity_per_user=1;
+		$voucher->cumulable=0;
+		$voucher->cumulable_reduction=0;
+		$voucher->minimum_amount=0;
+		$voucher->active=1;
+		$now=time();
+		$voucher->date_from=date("Y-m-d H:i:s",$now);
+		$voucher->date_to=date("Y-m-d H:i:s",$now+(3600*24));
+        $voucher->code='V'.(int)($voucher->id).'C'.(int)($cart->id_customer).'O'.$cart->id;
+		if($voucher->add()){
+            $cart->addCartRule((int)$voucher->id);
+        }
+	}
+	
+	public function so_numeros($a)
+	{
+		return preg_replace('/\D/', '', $a);
+	}
+    
     public function nomes_status_pagamentos() 
     {
 		global $cookie;
 		return Db::getInstance()->ExecuteS('SELECT * FROM `'._DB_PREFIX_.'order_state` AS a,`'._DB_PREFIX_.'order_state_lang` AS b WHERE b.id_lang = "'.$cookie->id_lang.'" AND a.deleted = "0" AND a.id_order_state=b.id_order_state');
 	}
+
+
+
+    public function hookPaymentReturn($params)
+    {
+        
+		//pedido
+        $order = new Order((int)$_GET['id_order']);
+		if(sha1($_GET['transacao'])!=$_GET['hash']){
+			die('Acesso negado!');
+		}
+        
+		//dados pix		
+		$sql = "SELECT * FROM `"._DB_PREFIX_."paghiperpix_pedidos` WHERE id_pedido = '".(int)$order->id."'";
+        $dados = Db::getInstance()->getRow($sql);
+
+		//aplica o layout
+        $this->smarty->assign(array(
+            'id_order' => $order->id,
+            'reference' => $order->reference,
+            'params' => $params,
+			'dados' => $dados,
+            'total' =>Tools::displayPrice(
+						$params['order']->getOrdersTotalPaid(),
+						new Currency($params['order']->id_currency),
+						false
+					),
+        ));
+		return $this->fetch('module:paghiperpix/views/templates/hook/confirmation.tpl');
+    }
 
     /**
      * Set values for the inputs.
@@ -329,3 +519,4 @@ class Woovi extends PaymentModule
         /* Place your code here. */
     }
 }
+
